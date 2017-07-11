@@ -18,6 +18,17 @@ public class CameraTest {
     }
 
     @Test
+    public void switchingTheCameraOnWhenOnDoesNothing() {
+        Camera c = new Camera(mockSensor, mockCard);
+        c.powerOn();
+
+        verify(mockSensor).powerUp();
+        c.powerOn();
+        verifyNoMoreInteractions(mockSensor);
+
+    }
+
+    @Test
     public void switchingTheCameraOffPowersDownTheSensor() {
         Camera camera = new Camera(mockSensor, mockCard);
         camera.powerOn();
