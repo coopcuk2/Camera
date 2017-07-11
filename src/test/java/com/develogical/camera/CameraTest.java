@@ -1,27 +1,24 @@
 package com.develogical.camera;
 
 import org.junit.Test;
-
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.*;
 
 public class CameraTest {
-
     Sensor mockSensor = mock(Sensor.class);
     MemoryCard mockCard = mock(MemoryCard.class);
 
-
     @Test
     public void switchingTheCameraOnPowersUpTheSensor() {
-
         Camera c = new Camera(mockSensor, mockCard);
-         c.powerOn();
+        c.powerOn();
 
-         verify(mockSensor).powerUp();
+        verify(mockSensor).powerUp();
 
     }
 
     @Test
-    public void switchingTheCameraOffPowersDownTheSensor(){
+    public void switchingTheCameraOffPowersDownTheSensor() {
         Camera camera = new Camera(mockSensor, mockCard);
         camera.powerOn();
         camera.powerOff();
@@ -29,7 +26,7 @@ public class CameraTest {
     }
 
     @Test
-    public void pressingTheShutterWhenPowerIsOffDoesNothing(){
+    public void pressingTheShutterWhenPowerIsOffDoesNothing() {
         Camera camera = new Camera(mockSensor, mockCard);
         camera.powerOff();
         camera.pressShutter();
@@ -38,7 +35,7 @@ public class CameraTest {
     }
 
     @Test
-    public void pressingTheShutterWithThePowerOnCopiesToMemoryCard(){
+    public void pressingTheShutterWithThePowerOnCopiesToMemoryCard() {
         Camera camera = new Camera(mockSensor, mockCard);
         camera.powerOn();
 
@@ -47,6 +44,35 @@ public class CameraTest {
         when(mockSensor.readData()).thenReturn(testBytes);
 
         camera.pressShutter();
-        verify(mockCard).write(testBytes,camera);
+        verify(mockCard).write(eq(testBytes), any());
+    }
+
+    @Test
+    public void switchingOffCameraDuringDataWriteDoesNothing() {
+        Camera camera = new Camera(mockSensor, mockCard);
+        camera.powerOn();
+
+        byte[] testBytes = "test".getBytes();
+
+        when(mockSensor.readData()).thenReturn(testBytes);
+
+        camera.pressShutter();
+        camera.powerOff();
+
+        verify(mockSensor, never()).powerDown();
+    }
+
+    @Test
+    public void cameraSwitchesOffSensorWhenDataFinishesWriting() {
+        Camera camera = new Camera(mockSensor, mockCard);
+
+        camera.powerOn();
+        camera.pressShutter();
+
+        ArgumentCaptor<WriteCompleteListener> argumentCaptor = ArgumentCaptor.forClass(WriteCompleteListener.class);
+        verify(mockCard).write(any(), argumentCaptor.capture());
+        argumentCaptor.getValue().writeComplete();
+
+        verify(mockSensor).powerDown();
     }
 }
